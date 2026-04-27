@@ -3,6 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const { randomUUID } = require('crypto');
 const mongoose = require('mongoose');
+const { ServerApiVersion } = require('mongodb');
 require('dotenv').config()
 const toggleRouter = require('./Endpoints/ToggleRouter')();
 /**
@@ -41,7 +42,16 @@ const asyncHandler = (fn) => (req, res, next) => {
 app.use('/api', toggleRouter);
 
 
-mongoose.connect(process.env.DATABASE_URI)
+mongoose.connect(process.env.DATABASE_URI,
+    {
+  serverApi: {
+    version: ServerApiVersion.v1,
+    strict: true,
+    deprecationErrors: true,
+  },
+  autoSelectFamily: false, // Explicitly disable auto selection of IP family
+}
+)
     const connection = mongoose.connection;
     connection.once('open', () => {
         app.listen(PORT, () =>{
