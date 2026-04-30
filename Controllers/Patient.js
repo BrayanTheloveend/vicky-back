@@ -1,36 +1,78 @@
 const mongoose = require('mongoose');
 const Patient = require('../Models/PatientSchema'); // adjust path if your models folder/name differs
-
+const { ObjectId } = mongoose.Types;
 // Create a new patient
 const createPatient = async (req, res) => {
     try {
-        const {
-            nom,
-            prenom,
-            genre,
-            dateNaissance,
-            telephone,
-            email,
-            departement,
-            motif,
-            message,
-        } = req.body;
+        const body = req.body || {};
 
-        if (!email) return res.status(400).json({ success: false, message: 'Name is required' });
+        // Supporte payload plat (nom, prenom, email...) ou déjà structuré sous identite/contact/...
+        const patientData = {
+            numeroPatient: body.numeroPatient || `PATfr-${Date.now()}`,
+            patientId: new ObjectId(), // généré automatiquement
+            identite: {
+                prenom: body.prenom || body.identite?.prenom,
+                nom: body.nom || body.identite?.nom,
+                dateNaissance: body.dateNaissance || body.identite?.dateNaissance,
+                genre: body.genre || body.identite?.genre,
+                nationalite: body.nationalite || body.identite?.nationalite,
+                numeroCNI: body.numeroCNI || body.identite?.numeroCNI,
+                photo: body.photo || body.identite?.photo,
+            },
+            contact: {
+                email: body.email || body.contact?.email,
+                telephone: body.telephone || body.contact?.telephone,
+                telephoneUrgence: body.telephoneUrgence || body.contact?.telephoneUrgence,
+                adresse: {
+                    rue: body.rue || body.contact?.adresse?.rue || body.adresse?.rue,
+                    ville: body.ville || body.contact?.adresse?.ville || body.adresse?.ville,
+                    region: body.region || body.contact?.adresse?.region || body.adresse?.region,
+                    pays: body.pays || body.contact?.adresse?.pays || body.adresse?.pays,
+                },
+            },
+            dossierMedical: {
+                groupeSanguin: body.groupeSanguin || body.dossierMedical?.groupeSanguin,
+                allergies: body.allergies || body.dossierMedical?.allergies || [],
+                antecedents: body.antecedents || body.dossierMedical?.antecedents || [],
+                traitementsCours: body.traitementsCours || body.dossierMedical?.traitementsCours || [],
+                handicap: typeof body.handicap !== 'undefined' ? body.handicap : body.dossierMedical?.handicap || false,
+                notes: body.notes || body.dossierMedical?.notes,
+            },
+            assurance: {
+                type: body.type || body.assurance?.type ,
+                compagnie: body.compagnie || body.assurance?.compagnie,
+                numeroPolice: body.numeroPolice || body.assurance?.numeroPolice,
+                dateExpiration: body.dateExpiration || body.assurance?.dateExpiration,
+                tauxCouverture: typeof body.tauxCouverture !== 'undefined' ? body.tauxCouverture : body.assurance?.tauxCouverture,
+            },
+            rendezVous: {
+                departement: body.departement || body.rendezVous?.departement,
+                pathologie: body.pathologie || body.rendezVous?.pathologie,
+                motif: body.motif || body.rendezVous?.motif,
+                dateRdv: body.dateRdv || body.rendezVous?.dateRdv,
+                creneauDebut: body.creneauDebut || body.rendezVous?.creneauDebut,
+                typeConsultation: body.typeConsultation || body.rendezVous?.typeConsultation,
+                niveauUrgence: body.niveauUrgence || body.rendezVous?.niveauUrgence,
+                notesSupplementaires: body.notesSupplementaires || body.rendezVous?.notesSupplementaires
+            },
+            contactUrgence: {
+                nom: body.contactUrgence?.nom || body.contactUrgenceNom || body.contactUrgenceNom,
+                lienParente: body.contactUrgence?.lienParente || body.contactUrgenceLien || body.lienParente,
+                telephone: body.contactUrgence?.telephone || body.contactUrgenceTelephone || body.contactUrgenceTelephone,
+            },
+        };
 
-        const patient = new Patient({
-            nom,
-            prenom,
-            genre,
-            dateNaissance,
-            telephone,
-            email,
-            departement,
-            motif,
-            message,
-        });
-
+        // validations simples
+        if (!patientData.identite.prenom || !patientData.identite.nom) {
+            return res.status(400).json({ success: false, message: 'Prénom et nom requis' });
+        }
+        if (!patientData.contact.email) {
+            return res.status(400).json({ success: false, message: 'Email requis' });
+        }
+        
+        const patient = new Patient(patientData);
         const saved = await patient.save();
+
         return res.status(201).json({ success: true, data: saved });
     } catch (err) {
         return res.status(500).json({ success: false, message: err.message });
@@ -68,6 +110,7 @@ const getPatients = async (req, res) => {
     }
 };
 
+
 // Get single patient by id
 const getPatientById = async (req, res) => {
     try {
@@ -99,6 +142,8 @@ const updatePatient = async (req, res) => {
     }
 };
 
+
+
 // Delete patient
 const deletePatient = async (req, res) => {
     try {
@@ -113,6 +158,7 @@ const deletePatient = async (req, res) => {
         return res.status(500).json({ success: false, message: err.message });
     }
 };
+
 
 module.exports = {
     createPatient,

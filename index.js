@@ -46,7 +46,7 @@ mongoose.connect(process.env.DATABASE_URI,
     {
   serverApi: {
     version: ServerApiVersion.v1,
-    strict: true,
+    strict: false,
     deprecationErrors: true,
   },
   autoSelectFamily: false, // Explicitly disable auto selection of IP family
